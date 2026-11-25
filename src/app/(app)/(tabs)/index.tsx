@@ -2,16 +2,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
-import { call, client } from "@/api/client";
-import { useAccounts, useBudgetStatus, useByCategory, useCategories, useDaily, useMe, useSummary, useTags, useTransactions, useTrend } from "@/api/hooks";
+import { useAccounts, useBudgetStatus, useLatestTransaction, useByCategory, useCategories, useDaily, useMe, useSummary, useTags, useTransactions, useTrend } from "@/api/hooks";
 import { BarChart, ShareBar } from "@/components/charts";
 import { TransactionRow } from "@/components/transaction-row";
 import { Card, ErrorText, FadeIn, ListSkeleton, MonthPicker, ProgressBar, Screen, Skeleton, T } from "@/components/ui";
-import { VerifyBanner } from "@/components/verify-banner";
+import { GetStarted } from "@/components/get-started";
 import { budgetDate, formatMoney, monthLabel, monthRange, shiftMonth, todayLocal } from "@/lib/money";
 import { useCountUp } from "@/lib/use-count-up";
 import { useTheme } from "@/theme/theme";
-import { useQuery } from "@tanstack/react-query";
 
 const band = { healthy: ["Healthy savings", "income"], low: ["Low buffer", "warn"], overspending: ["Spending more than earned", "expense"], none: ["No income", "muted"] } as const;
 const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
@@ -67,7 +65,7 @@ export default function Dashboard() {
   const cats = useCategories();
   const tags = useTags();
   const recent = useTransactions({ from, to });
-  const latest = useQuery({ queryKey: ["transactions", "latest"], staleTime: 60_000, queryFn: async () => (await call(client.GET("/transactions", { params: { query: { limit: 1 } } }))).data[0] ?? null });
+  const latest = useLatestTransaction();
   const s = summary.isPlaceholderData ? undefined : summary.data;
   const fmt = (v: number) => formatMoney(v, cur);
 
@@ -85,7 +83,7 @@ export default function Dashboard() {
   return (
     <Screen onRefresh={() => void qc.invalidateQueries()} refreshing={summary.isRefetching && !summary.isPlaceholderData}>
       <T size={26} bold>Dashboard</T>
-      <VerifyBanner />
+      <GetStarted />
       <MonthPicker label={monthLabel(ym.year, ym.month)} onPrev={() => go(-1)} onNext={() => go(1)} />
       {summary.error ? <ErrorText error={summary.error} onRetry={() => void qc.invalidateQueries()} /> : (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>

@@ -102,3 +102,11 @@ export const useFxQuote = (from?: string, to?: string, date?: string) =>
       return (await call(Promise.resolve(res))).data;
     },
   });
+
+/** Newest transaction overall (null for a brand-new user). */
+export const useLatestTransaction = () =>
+  useQuery({ queryKey: ["transactions", "latest"], staleTime: 60_000, queryFn: async () => (await call(client.GET("/transactions", { params: { query: { limit: 1 } } }))).data[0] ?? null });
+
+/** Portfolio value and invested amount at each month end (replayed from trades + manual prices, base currency). */
+export const usePortfolioHistory = (months: number) =>
+  useQuery({ ...keep, queryKey: ["investments", "history", months], staleTime: 60_000, queryFn: async () => (await call(client.GET("/investments/portfolio/history", { params: { query: { months } } }))).data });

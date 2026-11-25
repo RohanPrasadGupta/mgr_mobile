@@ -5,6 +5,7 @@ import { usePortfolio } from "@/api/hooks";
 import type { AssetClass, Holding } from "@/api/types";
 import { Button, Card, CardsSkeleton, Empty, ErrorText, ProgressBar, Screen, T } from "@/components/ui";
 import { CLASS_LABEL } from "@/lib/investments";
+import { PortfolioChart } from "@/components/portfolio-chart";
 import { formatMoney, formatPct, formatQty } from "@/lib/money";
 import { useTheme } from "@/theme/theme";
 
@@ -35,8 +36,9 @@ export default function Investments() {
           </View>
           <T tone="muted" size={12}>Annualised return (XIRR): <T size={12} bold tone={tone(p.xirrPct)}>{formatPct(p.xirrPct, true)}</T>{p.approximate ? " · converted at today's FX rate" : ""}{!p.pricedAll ? "; holdings without a price are counted at cost" : ""}</T>
           {p.excluded.length > 0 && <Card><T tone="warn" size={13}>Not included in the totals: {p.excluded.map((e) => `${e.symbol} (${e.reason})`).join(", ")}.</T></Card>}
-          {p.holdings.length === 0 ? <Empty>No investments yet. Add an asset (a stock, a SIP fund, SSF…) then record trades or contributions.</Empty> : (
+          {p.holdings.length === 0 ? <Empty>No investments yet. Add an asset (a stock, crypto, a SIP or pension fund…) then record trades or contributions.</Empty> : (
             <>
+              <PortfolioChart />
               <Card style={{ paddingVertical: 4 }}>
                 {p.holdings.map((h, i) => <HoldingRow key={h.asset.id} h={h} first={i === 0} />)}
               </Card>
