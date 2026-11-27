@@ -2,6 +2,7 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { ApiError, login, register } from "@/api/client";
+import { openPrivacy } from "@/lib/legal";
 import { Button, Card, ErrorText, FadeIn, Field, Screen, T } from "./ui";
 import { Wordmark } from "./brand";
 
@@ -50,6 +51,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             {isRegister ? "Have an account? " : "New here? "}
             <Link href={isRegister ? "/login" : "/register"}><T tone="primary" bold>{isRegister ? "Sign in" : "Create an account"}</T></Link>
           </T>
+          {isRegister && (
+            <T tone="muted" size={13} style={{ textAlign: "center" }}>
+              By creating an account you agree to how we handle your data in the{" "}
+              <T tone="primary" size={13} accessibilityRole="link" onPress={() => void openPrivacy()}>privacy policy</T>.
+            </T>
+          )}
         </FadeIn>
       </KeyboardAvoidingView>
     </Screen>

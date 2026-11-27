@@ -77,6 +77,7 @@ export default function Dashboard() {
   }, [latest.data, s, ym.year, ym.month]);
   const go = (d: number) => { touched.current = true; setYm((c) => shiftMonth(c.year, c.month, d)); };
   const [bandText, bandTone] = band[s?.savingsBand ?? "none"];
+  const overspent = (s?.savingsRatePct ?? 0) < 0;
   const today = todayLocal();
   const days = daily.data?.days ?? [];
 
@@ -93,9 +94,10 @@ export default function Dashboard() {
           <FadeIn index={3} style={{ flexBasis: "47%", flexGrow: 1 }}>
             <Card style={{ padding: 14, gap: 6 }}>
               <T tone="muted" size={12}>Savings rate</T>
-              {!s ? <Skeleton height={24} width="50%" /> : <T size={19} bold>{s.savingsRatePct == null ? "—" : `${s.savingsRatePct.toFixed(0)}%`}</T>}
+              {!s ? <Skeleton height={24} width="50%" /> : <T size={19} bold tone={overspent ? "expense" : "fg"}>{s.savingsRatePct == null ? "—" : `${s.savingsRatePct.toFixed(0)}%`}</T>}
               <View>
-                <ProgressBar pct={Math.max(0, s?.savingsRatePct ?? 0)} color={t[bandTone === "muted" ? "muted" : bandTone]} height={6} />
+                {/* Below zero there is no point on a 0–100 bar: fill it in red so overspending doesn't look like an empty, broken bar. */}
+                <ProgressBar pct={overspent ? 100 : Math.max(0, s?.savingsRatePct ?? 0)} color={t[bandTone === "muted" ? "muted" : bandTone]} height={6} />
                 <View style={{ position: "absolute", left: "20%", top: -2, width: 2, height: 10, backgroundColor: t.muted }} accessibilityLabel="20 percent healthy marker" />
               </View>
               <T tone={bandTone} size={11} bold>{bandText}</T>

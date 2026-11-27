@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { goBack } from "@/lib/nav";
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Switch, View } from "react-native";
 import { call, client } from "@/api/client";
 import { invalidateInvestments, useAssetPrices, useAssetTrades, useHolding, useMutate } from "@/api/hooks";
-import type { Body, CostMethod, Holding } from "@/api/types";
-import { Button, Card, CardsSkeleton, Chip, ChipRow, Empty, ErrorText, Field, ListSkeleton, Screen, T, confirmAsync } from "@/components/ui";
+import type { Body, CostMethod, Holding, Trade } from "@/api/types";
+import { Button, Card, CardsSkeleton, Chip, ChipRow, ErrorText, Field, ListSkeleton, Screen, T, confirmAsync } from "@/components/ui";
+import { CurrencyPicker } from "@/components/currency-picker";
 import { CLASS_LABEL, TYPE_LABEL, isInflow } from "@/lib/investments";
 import { formatMoney, formatPct, formatQty, formatUnitPrice, minorUnit, parseAmount, todayLocal } from "@/lib/money";
 
@@ -18,6 +19,10 @@ export default function AssetDetail() {
   const [error, setError] = useState<unknown>(null);
   const patch = useMutate((body: Body<"/investments/assets/{id}", "patch">) => call(client.PATCH("/investments/assets/{id}", { params: { path: { id: id! } }, body })), invalidateInvestments, "Asset updated");
   const remove = useMutate(() => call(client.DELETE("/investments/assets/{id}", { params: { path: { id: id! } } })), invalidateInvestments, "Asset deleted");
+  // The trade id is the mutation's argument, so the request always targets the row whose Delete was pressed.
+  const removeTrade = useMutate((tradeId: string) => call(client.DELETE("/investments/trades/{id}", { params: { path: { id: tradeId } } })), invalidateInvestments, "Entry deleted");
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const toggleAvg = useMutate(({ tradeId, on }: { tradeId: string; on: boolean }) => call(client.PATCH("/investments/trades/{id}", { params: { path: { id: tradeId } }, body: { includeInAvg: on } })), invalidateInvestments);
 
   if (holding.isPending) return <Screen><CardsSkeleton count={3} /></Screen>;
   if (holding.error || !holding.data) return <Screen><ErrorText error={holding.error ?? new Error("Asset not found")} /></Screen>;
@@ -26,6 +31,11 @@ export default function AssetDetail() {
   const units = a.tracking === "units";
   const cur = a.currency;
   const act = async (fn: () => Promise<unknown>) => { setError(null); try { await fn(); } catch (e) { setError(e); } };
+  const deleteTrade = async (tr: Trade) => {
+    if (!(await confirmAsync("Delete this entry?", `${TYPE_LABEL[tr.type]} on ${tr.tradedOn}. This cannot be undone.`))) return;
+    setDeleting(tr.id);
+    try { await act(() => removeTrade.mutateAsync(tr.id)); } finally { setDeleting(null); }
+  };
 
   return (
     <Screen>
@@ -38,7 +48,7 @@ export default function AssetDetail() {
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         {(units ? [
           ["Units held", h.closed ? "0 (closed)" : formatQty(h.quantity)],
-          [a.costMethod === "manual" ? "Avg price (selected)" : "Avg cost / unit", h.avgCostMinor === null ? "—" : formatUnitPrice(h.avgCostMinor, cur)],
+          [a.costMethod === "manual" || trades.data?.some((x) => x.type === "buy" && !x.includeInAvg) ? "Avg price (buys in average)" : "Avg cost / unit", h.avgCostMinor === null ? "—" : formatUnitPrice(h.avgCostMinor, cur)],
           ["Cost of holding", formatMoney(h.remainingCostMinor, cur)],
           ["Market value", h.marketValueMinor === null ? "Set a price" : formatMoney(h.marketValueMinor, cur)],
           ["Unrealised P/L", h.unrealisedPnlMinor === null ? "—" : formatMoney(h.unrealisedPnlMinor, cur, { sign: true }), tone(h.unrealisedPnlMinor)],
@@ -64,14 +74,26 @@ export default function AssetDetail() {
       <Card style={{ gap: 4 }}>
         <T bold>{units ? "Trades" : "Contributions & withdrawals"}</T>
         {trades.isPending ? <ListSkeleton rows={3} /> : trades.data?.length === 0 ? <T tone="muted">Nothing recorded yet.</T> : trades.data?.map((tr) => (
-          <Pressable key={tr.id} accessibilityRole="button" accessibilityLabel={`${TYPE_LABEL[tr.type]} ${tr.tradedOn}`} onPress={() => router.push({ pathname: "/trade", params: { assetId: a.id, tradeId: tr.id } })} style={({ pressed }) => ({ flexDirection: "row", gap: 10, paddingVertical: 10, opacity: pressed ? 0.6 : 1 })}>
+          <View key={tr.id} style={{ flexDirection: "row", gap: 10, paddingVertical: 10 }}>
             <T tone="muted" size={12} style={{ width: 78 }}>{tr.tradedOn}</T>
             <View style={{ flex: 1 }}>
               <T bold>{TYPE_LABEL[tr.type]}{tr.quantity !== null ? <T tone="muted" size={13}> · {formatQty(tr.quantity)}{tr.priceMinor !== null ? ` × ${formatUnitPrice(tr.priceMinor, cur)}` : ""}</T> : null}</T>
-              {(tr.note || tr.feeMinor) ? <T tone="muted" size={12} numberOfLines={1}>{[tr.note, tr.feeMinor ? `fee ${formatMoney(tr.feeMinor, cur)}` : null].filter(Boolean).join(" · ")}</T> : null}
+              {(tr.note || tr.feeMinor || (tr.type === "buy" && !tr.includeInAvg)) ? <T tone="muted" size={12} numberOfLines={1}>{[tr.note, tr.feeMinor ? `fee ${formatMoney(tr.feeMinor, cur)}` : null, tr.type === "buy" && !tr.includeInAvg ? "not in average" : null].filter(Boolean).join(" · ")}</T> : null}
+              {tr.type === "buy" && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+                  <Switch value={tr.includeInAvg} disabled={a.archived || toggleAvg.isPending} onValueChange={(on) => act(() => toggleAvg.mutateAsync({ tradeId: tr.id, on }))} accessibilityLabel={`Use the buy of ${tr.tradedOn} for the average price`} />
+                  <T tone="muted" size={12}>Use for average</T>
+                </View>
+              )}
             </View>
-            <T bold tone={tr.type === "bonus" ? "muted" : isInflow(tr.type) ? "income" : "fg"}>{tr.type === "bonus" ? "free" : `${isInflow(tr.type) ? "+" : "−"}${formatMoney(tr.amountMinor, cur)}`}</T>
-          </Pressable>
+            <View style={{ alignItems: "flex-end", gap: 6 }}>
+              <T bold tone={tr.type === "bonus" ? "muted" : isInflow(tr.type) ? "income" : "fg"}>{tr.type === "bonus" ? "free" : `${isInflow(tr.type) ? "+" : "−"}${formatMoney(tr.amountMinor, cur)}`}</T>
+              <View style={{ flexDirection: "row", gap: 6 }}>
+                <Button small variant="ghost" title="Edit" disabled={a.archived} onPress={() => router.push({ pathname: "/trade", params: { assetId: a.id, tradeId: tr.id } })} testID={`edit-${tr.id}`} />
+                <Button small variant="danger" title="Delete" disabled={a.archived || (deleting !== null && deleting !== tr.id)} loading={deleting === tr.id} onPress={() => deleteTrade(tr)} testID={`delete-${tr.id}`} />
+              </View>
+            </View>
+          </View>
         ))}
       </Card>
 
@@ -82,6 +104,10 @@ export default function AssetDetail() {
             <ChipRow>{([["wavg", "Weighted average"], ["fifo", "FIFO"], ["manual", "Selected buys"]] as [CostMethod, string][]).map(([v, l]) => <Chip key={v} label={l} selected={a.costMethod === v} onPress={() => act(() => patch.mutateAsync({ costMethod: v }))} />)}</ChipRow>
           </View>
         )}
+        <CurrencyPicker label="Currency" value={a.currency} onChange={async (next) => {
+          if (next === a.currency) return;
+          if (await confirmAsync(`Use ${next} for ${a.symbol}?`, `This only changes the label from ${a.currency} to ${next}: every amount and price stays the number you entered. Use it when the asset was recorded in the wrong currency.`, `Use ${next}`)) await act(() => patch.mutateAsync({ currency: next }));
+        }} />
         <ErrorText error={error} />
         <View style={{ flexDirection: "row", gap: 16 }}>
           <T tone="muted" size={13} style={{ textDecorationLine: "underline" }} onPress={() => act(() => patch.mutateAsync({ archived: !a.archived }))}>{a.archived ? "Unarchive" : "Archive"}</T>

@@ -1,6 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { Platform } from "react-native";
 import { asset, holding, trade } from "../../test/fixtures";
 import { errorResponse, mockFetch, renderWithClient } from "../../test/utils";
 import { TradeForm } from "./trade-form";
@@ -30,7 +29,7 @@ describe("TradeForm — unit assets", () => {
   it("shows the API's oversell error and stays on the form", async () => {
     mockFetch({ "POST /investments/trades": () => errorResponse(422, "insufficient_quantity", "Not enough units held on that date to sell") });
     await renderWithClient(<TradeForm holding={holding()} />);
-    await press("Sell");
+    await fireEvent.press(screen.getByRole("radio", { name: "Sell" }));
     await type("Quantity", "999");
     await type(/^Price per unit/, "10");
     await press("Save");
@@ -53,12 +52,23 @@ describe("TradeForm — unit assets", () => {
     expect(m.fn).not.toHaveBeenCalled();
   });
 
-  it("bonus shares need only a quantity; the 'selected buys' flag appears only for manual cost method", async () => {
+  it("every buy has a 'use for average' switch (on by default, any cost method); bonus shares don't", async () => {
     const m = mockFetch({ "POST /investments/trades": { data: {} } });
-    await renderWithClient(<TradeForm holding={holding({}, { costMethod: "manual" })} />);
-    expect(screen.getByRole("button", { name: /Use this buy for the displayed average/ })).toBeOnTheScreen();
-    await press("Bonus shares");
-    expect(screen.queryByRole("button", { name: /Use this buy/ })).not.toBeOnTheScreen();
+    await renderWithClient(<TradeForm holding={holding()} />); // weighted average
+    const sw = screen.getByLabelText("Use for average price");
+    expect(sw.props.value).toBe(true);
+    await fireEvent(sw, "valueChange", false);
+    await type("Quantity", "2");
+    await type(/^Price per unit/, "10");
+    await press("Save");
+    await waitFor(() => expect(m.last("POST", "/investments/trades")!.body).toMatchObject({ type: "buy", includeInAvg: false }));
+  });
+
+  it("bonus shares need only a quantity, and have no average switch", async () => {
+    const m = mockFetch({ "POST /investments/trades": { data: {} } });
+    await renderWithClient(<TradeForm holding={holding()} />);
+    await fireEvent.press(screen.getByRole("radio", { name: "Bonus shares" }));
+    expect(screen.queryByLabelText("Use for average price")).not.toBeOnTheScreen();
     await type("Quantity", "5");
     await press("Save");
     await waitFor(() => expect(m.last("POST", "/investments/trades")).toBeDefined());
@@ -71,9 +81,10 @@ describe("TradeForm — value assets", () => {
   it("offers contribution/withdrawal and sends the amount and fee", async () => {
     const m = mockFetch({ "POST /investments/trades": { data: {} } });
     await renderWithClient(<TradeForm holding={sip} />);
-    expect(screen.queryByRole("button", { name: "Buy" })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("radio", { name: "Buy" })).not.toBeOnTheScreen();
+    expect(screen.getByRole("radio", { name: "Contribution" }).props.accessibilityState.checked).toBe(true);
     await type(/^Amount/, "1000");
-    await type(/^Fee/, "5");
+    await type(/^Fee \/ charge/, "5");
     await press("Save");
     await waitFor(() => expect(m.last("POST", "/investments/trades")).toBeDefined());
     expect(m.last("POST", "/investments/trades")!.body).toMatchObject({ type: "contribution", amountMinor: 100_000, feeMinor: 500 });
@@ -81,19 +92,28 @@ describe("TradeForm — value assets", () => {
 });
 
 describe("TradeForm — edit", () => {
-  it("prefills, patches, and deletes after confirming", async () => {
-    const m = mockFetch({ "PATCH /investments/trades/tr1": { data: {} }, "DELETE /investments/trades/tr1": null });
+  it("prefills and patches; the type is a radio group and only sent when it changes", async () => {
+    const m = mockFetch({ "PATCH /investments/trades/tr1": { data: {} } });
     await renderWithClient(<TradeForm holding={holding()} trade={trade()} />);
     expect(screen.getByLabelText("Quantity").props.value).toBe("10");
     expect(screen.getByLabelText(/^Price per unit/).props.value).toBe("100");
+    expect(screen.getByRole("radio", { name: "Buy" }).props.accessibilityState.checked).toBe(true);
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull(); // delete is on the trades list now
     await type("Quantity", "12");
     await press("Save");
     await waitFor(() => expect(router.back).toHaveBeenCalledTimes(1));
-    expect(m.last("PATCH", "/investments/trades/tr1")!.body).toMatchObject({ quantity: 12, priceMinor: 10_000 });
-    (globalThis as { confirm?: () => boolean }).confirm = jest.fn(() => true);
-    jest.replaceProperty(Platform, "OS", "web");
-    await press("Delete");
-    await waitFor(() => expect(m.last("DELETE", "/investments/trades/tr1")).toBeDefined());
+    const first = m.last("PATCH", "/investments/trades/tr1")!.body;
+    expect(first).toMatchObject({ quantity: 12, priceMinor: 10_000 });
+    expect(first.type).toBeUndefined();
+  });
+
+  it("turns a buy into a sell", async () => {
+    const m = mockFetch({ "PATCH /investments/trades/tr1": { data: {} } });
+    await renderWithClient(<TradeForm holding={holding()} trade={trade()} />);
+    await fireEvent.press(screen.getByRole("radio", { name: "Sell" }));
+    expect(screen.getByRole("radio", { name: "Sell" }).props.accessibilityState.checked).toBe(true);
+    await press("Save");
+    await waitFor(() => expect(m.last("PATCH", "/investments/trades/tr1")!.body).toMatchObject({ type: "sell", quantity: 10, priceMinor: 10_000 }));
     expect(asset().symbol).toBe("PTT");
   });
 });

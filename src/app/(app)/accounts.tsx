@@ -2,17 +2,17 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { call, client } from "@/api/client";
-import { useAccounts, useCurrencies, useMe, useMutate } from "@/api/hooks";
+import { useAccounts, useMe, useMutate } from "@/api/hooks";
 import type { Account, AccountType, Body } from "@/api/types";
 import { Button, Card, Chip, ChipRow, Empty, ErrorText, Field, Screen, T, confirmAsync } from "@/components/ui";
 import { formatMoney, parseAmount, toMinor } from "@/lib/money";
+import { CurrencyPicker } from "@/components/currency-picker";
 
 const TYPES: AccountType[] = ["cash", "bank", "wallet", "card", "loan", "investment"];
 const refresh = (qc: import("@tanstack/react-query").QueryClient) => qc.invalidateQueries({ queryKey: ["accounts"] });
 
 export default function Accounts() {
   const accounts = useAccounts();
-  const currencies = useCurrencies();
   const me = useMe();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
@@ -20,7 +20,7 @@ export default function Accounts() {
   const [currency, setCurrency] = useState("");
   const [opening, setOpening] = useState("");
   const [error, setError] = useState<unknown>(null);
-  const create = useMutate((body: Body<"/accounts", "post">) => call(client.POST("/accounts", { body })), refresh, "Account added");
+  const create = useMutate((body: Body<"/accounts", "post">) => call(client.POST("/accounts", { body })), async (qc) => { await refresh(qc); await qc.invalidateQueries({ queryKey: ["me"] }); }, "Account added");
   const update = useMutate(({ id, archived }: { id: string; archived: boolean }) => call(client.PATCH("/accounts/{id}", { params: { path: { id } }, body: { archived } })), refresh, "Account updated");
   const remove = useMutate((id: string) => call(client.DELETE("/accounts/{id}", { params: { path: { id } } })), refresh, "Account deleted");
   const cur = currency || me.data?.baseCurrency || "THB";
@@ -57,7 +57,7 @@ export default function Accounts() {
           <T bold>New account</T>
           <Field label="Name" value={name} onChangeText={setName} autoFocus />
           <ChipRow>{TYPES.map((x) => <Chip key={x} label={x} selected={type === x} onPress={() => setType(x)} />)}</ChipRow>
-          <ChipRow>{currencies.data?.map((c) => <Chip key={c.code} label={c.code} selected={cur === c.code} onPress={() => setCurrency(c.code)} />)}</ChipRow>
+          <CurrencyPicker value={cur} onChange={setCurrency} />
           <Field label="Opening balance" value={opening} onChangeText={setOpening} keyboardType="decimal-pad" placeholder="0.00" />
           <View style={{ flexDirection: "row", gap: 12 }}><View style={{ flex: 1 }}><Button title="Cancel" variant="ghost" onPress={() => setAdding(false)} /></View><View style={{ flex: 1 }}><Button title="Add" onPress={add} loading={create.isPending} /></View></View>
         </Card>

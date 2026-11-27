@@ -8,8 +8,11 @@
     "scheme": "moneymgr",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.moneymgr.app",
-      "supportsTablet": true
+      "bundleIdentifier": "com.rohangupta.moneymgr",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.moneymgr.app"
+      "package": "com.rohangupta.moneymgr"
     },
     "web": {
       "output": "single",
@@ -44,7 +47,8 @@
         "expo-image-picker",
         {
           "photosPermission": "MoneyMgr uses your photos so you can attach receipts to transactions.",
-          "cameraPermission": "MoneyMgr uses the camera so you can photograph receipts."
+          "cameraPermission": "MoneyMgr uses the camera so you can photograph receipts.",
+          "microphonePermission": false
         }
       ],
       "expo-sharing"

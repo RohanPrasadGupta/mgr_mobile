@@ -2,6 +2,9 @@ import type { AssetClass, TradeType } from "@/api/types";
 
 export const CLASS_LABEL: Record<AssetClass, string> = { stock: "Stock", crypto: "Crypto", fund: "Fund / SIP", retirement: "Retirement", gold: "Gold", fixed_deposit: "Fixed deposit", other: "Other" };
 export const CLASSES = Object.keys(CLASS_LABEL) as AssetClass[];
+/** Board tab order, and each class's colour as an index into the theme's chart palette (same colours as the web app). */
+export const CLASS_ORDER: AssetClass[] = ["stock", "crypto", "fund", "retirement", "gold", "fixed_deposit", "other"];
+export const CLASS_CHART: Record<AssetClass, number> = { stock: 0, crypto: 2, fund: 4, retirement: 3, gold: 6, fixed_deposit: 1, other: 5 };
 export const defaultTracking = (c: AssetClass): "units" | "value" => (c === "stock" || c === "crypto" || c === "gold" ? "units" : "value");
 
 export const TYPES_FOR: Record<"units" | "value", { value: TradeType; label: string }[]> = {

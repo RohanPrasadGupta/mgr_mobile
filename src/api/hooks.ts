@@ -38,6 +38,8 @@ export function useMutate<TVars, TOut = unknown>(fn: (v: TVars) => Promise<TOut>
 
 export const usePortfolio = () => useQuery({ queryKey: ["investments", "portfolio"], queryFn: async () => (await call(client.GET("/investments/portfolio"))).data, staleTime: 30_000 });
 export const useHolding = (id: string | undefined) => useQuery({ queryKey: ["investments", "asset", id], enabled: !!id, queryFn: async () => (await call(client.GET("/investments/assets/{id}", { params: { path: { id: id! } } }))).data, staleTime: 15_000 });
+/** Every entry across assets for the investments board (the API returns at most 500, newest first). */
+export const useAllTrades = () => useQuery({ queryKey: ["investments", "trades", "all"], queryFn: async () => (await call(client.GET("/investments/trades", { params: { query: { limit: 500 } } }))).data, staleTime: 15_000 });
 export const useAssetTrades = (id: string | undefined) => useQuery({ queryKey: ["investments", "trades", id], enabled: !!id, queryFn: async () => (await call(client.GET("/investments/trades", { params: { query: { assetId: id, limit: 500 } } }))).data, staleTime: 15_000 });
 export const useAssetPrices = (id: string | undefined) => useQuery({ queryKey: ["investments", "prices", id], enabled: !!id, queryFn: async () => (await call(client.GET("/investments/assets/{id}/prices", { params: { path: { id: id! } } }))).data, staleTime: 30_000 });
 export const invalidateInvestments = (qc: QueryClient) => qc.invalidateQueries({ queryKey: ["investments"] });

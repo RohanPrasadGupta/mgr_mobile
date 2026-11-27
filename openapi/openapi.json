@@ -555,6 +555,15 @@
                     "minLength": 3,
                     "maxLength": 3
                   },
+                  "currencies": {
+                    "maxItems": 60,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 3
+                    }
+                  },
                   "timezone": {
                     "type": "string"
                   },
@@ -2881,6 +2890,134 @@
         }
       }
     },
+    "/imports/categories": {
+      "post": {
+        "operationId": "importCategories",
+        "tags": [
+          "Import"
+        ],
+        "summary": "Import categories (dry-run supported, idempotent)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rows": {
+                    "minItems": 1,
+                    "maxItems": 10000,
+                    "type": "array",
+                    "items": {}
+                  },
+                  "dryRun": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "rows"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CategoryImportReport"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/imports/notes": {
+      "post": {
+        "operationId": "importNotes",
+        "tags": [
+          "Import"
+        ],
+        "summary": "Import notes (dry-run supported, idempotent)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rows": {
+                    "minItems": 1,
+                    "maxItems": 10000,
+                    "type": "array",
+                    "items": {}
+                  },
+                  "dryRun": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "rows"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/NoteImportReport"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/imports/investments": {
       "post": {
         "operationId": "importInvestments",
@@ -3289,6 +3426,11 @@
                   },
                   "archived": {
                     "type": "boolean"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
                   }
                 }
               }
@@ -3713,6 +3855,18 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "buy",
+                      "sell",
+                      "dividend",
+                      "bonus",
+                      "fee",
+                      "contribution",
+                      "withdrawal"
+                    ]
+                  },
                   "quantity": {
                     "type": "number",
                     "exclusiveMinimum": 0,
@@ -5828,6 +5982,532 @@
         }
       }
     },
+    "/admin/me/password": {
+      "post": {
+        "operationId": "adminChangePassword",
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Change your own admin password (required after a one-time password)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "currentPassword": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "currentPassword",
+                  "newPassword"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Success (no content)"
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/admins": {
+      "get": {
+        "operationId": "adminListAdmins",
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Admin accounts (owners only)",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminAccount"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "adminCreateAdmin",
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Add an admin; returns a one-time password (owners only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "role": {
+                    "default": "admin",
+                    "type": "string",
+                    "enum": [
+                      "owner",
+                      "admin"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "email",
+                  "name",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAccountWithPassword"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/admins/{id}/disable": {
+      "post": {
+        "operationId": "adminDisableAdmin",
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Block an admin and end their sessions (owners only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAccount"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/admins/{id}/enable": {
+      "post": {
+        "operationId": "adminEnableAdmin",
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Let a disabled admin sign in again (owners only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAccount"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/admins/{id}/reset-2fa": {
+      "post": {
+        "operationId": "adminResetAdmin2fa",
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Clear their authenticator; next sign-in enrols a new one (owners only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAccount"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/admins/{id}/reset-password": {
+      "post": {
+        "operationId": "adminResetAdminPassword",
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Issue a new one-time password and end their sessions (owners only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAccountWithPassword"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/admins/{id}/role": {
+      "post": {
+        "operationId": "adminSetAdminRole",
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Make an admin an owner or a regular admin (owners only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "owner",
+                      "admin"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "role",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAccount"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/stats": {
       "get": {
         "operationId": "adminStats",
@@ -6818,6 +7498,86 @@
           "balanceMinor"
         ]
       },
+      "AdminAccount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin"
+            ]
+          },
+          "twoFactorEnabled": {
+            "type": "boolean"
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          },
+          "lastLoginAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "disabledAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role",
+          "twoFactorEnabled",
+          "mustChangePassword",
+          "lastLoginAt",
+          "disabledAt",
+          "createdAt"
+        ]
+      },
+      "AdminAccountWithPassword": {
+        "type": "object",
+        "properties": {
+          "admin": {
+            "$ref": "#/components/schemas/AdminAccount"
+          },
+          "temporaryPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "admin",
+          "temporaryPassword"
+        ]
+      },
       "AdminHealth": {
         "type": "object",
         "properties": {
@@ -6914,6 +7674,16 @@
           "name": {
             "type": "string"
           },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin"
+            ]
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          },
           "lastLoginAt": {
             "anyOf": [
               {
@@ -6930,6 +7700,8 @@
           "id",
           "email",
           "name",
+          "role",
+          "mustChangePassword",
           "lastLoginAt"
         ]
       },
@@ -7937,6 +8709,55 @@
           "deletedAt"
         ]
       },
+      "CategoryImportReport": {
+        "type": "object",
+        "properties": {
+          "dryRun": {
+            "type": "boolean"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "imported": {
+            "type": "integer"
+          },
+          "duplicates": {
+            "type": "integer"
+          },
+          "invalid": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "row",
+                "reason"
+              ]
+            }
+          },
+          "created": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "dryRun",
+          "total",
+          "imported",
+          "duplicates",
+          "invalid",
+          "created"
+        ]
+      },
       "Currency": {
         "type": "object",
         "properties": {
@@ -8562,6 +9383,18 @@
                 "type": "null"
               }
             ]
+          },
+          "lastBuyPriceMinor": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lastSellPriceMinor": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -8584,7 +9417,9 @@
           "closed",
           "tradeCount",
           "firstTradedOn",
-          "lastTradedOn"
+          "lastTradedOn",
+          "lastBuyPriceMinor",
+          "lastSellPriceMinor"
         ]
       },
       "ImportReport": {
@@ -8756,6 +9591,48 @@
           "pinned",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "NoteImportReport": {
+        "type": "object",
+        "properties": {
+          "dryRun": {
+            "type": "boolean"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "imported": {
+            "type": "integer"
+          },
+          "duplicates": {
+            "type": "integer"
+          },
+          "invalid": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "row",
+                "reason"
+              ]
+            }
+          }
+        },
+        "required": [
+          "dryRun",
+          "total",
+          "imported",
+          "duplicates",
+          "invalid"
         ]
       },
       "Portfolio": {
@@ -10073,6 +10950,12 @@
           "baseCurrency": {
             "type": "string"
           },
+          "currencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "timezone": {
             "type": "string"
           },
@@ -10091,6 +10974,7 @@
           "email",
           "name",
           "baseCurrency",
+          "currencies",
           "timezone",
           "locale",
           "weekStart",

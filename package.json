@@ -41,6 +41,8 @@
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.3.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~58.0.4",
     "jest": "^30.5.2",
     "jest-expo": "^58.0.15",
     "react-test-renderer": "^19.3.0",
@@ -56,7 +58,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "api:sync": "cp ../mgr_backend/apps/api/openapi.json openapi/openapi.json && npm run api:generate",
-    "api:generate": "npx --yes openapi-typescript@7 openapi/openapi.json -o src/api/schema.d.ts"
+    "api:generate": "npx --yes openapi-typescript@7 openapi/openapi.json -o src/api/schema.d.ts",
+    "eas-build-pre-install": "node scripts/check-release-env.js"
   },
   "private": true,
   "jest": {

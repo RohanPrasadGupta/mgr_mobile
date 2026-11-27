@@ -1,7 +1,9 @@
 // Money is integer minor units + ISO currency code. Formatting avoids Intl.NumberFormat currency styles on purpose:
 // Hermes' Intl support differs per platform/version, and a crash while rendering a balance is not acceptable.
-const ZERO_DECIMAL = new Set(["JPY", "KRW", "VND"]);
-export const minorUnit = (c: string) => (ZERO_DECIMAL.has(c) ? 0 : 2);
+/** Decimal places per ISO 4217 (most use 2). Keep in step with mgr_backend/packages/shared/src/money.ts. */
+const ZERO_DECIMAL = new Set(["JPY", "KRW", "VND", "CLP", "ISK", "UGX", "PYG", "XAF", "XOF", "XPF", "KMF", "DJF", "GNF", "RWF", "VUV", "BIF"]);
+const THREE_DECIMAL = new Set(["BHD", "KWD", "OMR", "JOD", "TND", "LYD", "IQD"]);
+export const minorUnit = (c: string) => (ZERO_DECIMAL.has(c) ? 0 : THREE_DECIMAL.has(c) ? 3 : 2);
 export const toMinor = (major: number, c: string) => Math.round(major * 10 ** minorUnit(c));
 export const toMajor = (minor: number, c: string) => minor / 10 ** minorUnit(c);
 

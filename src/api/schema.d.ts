@@ -529,6 +529,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/imports/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import categories (dry-run supported, idempotent) */
+        post: operations["importCategories"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/imports/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import notes (dry-run supported, idempotent) */
+        post: operations["importNotes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/imports/investments": {
         parameters: {
             query?: never;
@@ -1073,6 +1107,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change your own admin password (required after a one-time password) */
+        post: operations["adminChangePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/admins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin accounts (owners only) */
+        get: operations["adminListAdmins"];
+        put?: never;
+        /** Add an admin; returns a one-time password (owners only) */
+        post: operations["adminCreateAdmin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/admins/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Block an admin and end their sessions (owners only) */
+        post: operations["adminDisableAdmin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/admins/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Let a disabled admin sign in again (owners only) */
+        post: operations["adminEnableAdmin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/admins/{id}/reset-2fa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clear their authenticator; next sign-in enrols a new one (owners only) */
+        post: operations["adminResetAdmin2fa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/admins/{id}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue a new one-time password and end their sessions (owners only) */
+        post: operations["adminResetAdminPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/admins/{id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make an admin an owner or a regular admin (owners only) */
+        post: operations["adminSetAdminRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/stats": {
         parameters: {
             query?: never;
@@ -1309,6 +1463,24 @@ export interface components {
             deletedAt: string | null;
             balanceMinor: number;
         };
+        AdminAccount: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            name: string;
+            /** @enum {string} */
+            role: "owner" | "admin";
+            twoFactorEnabled: boolean;
+            mustChangePassword: boolean;
+            lastLoginAt: string | null;
+            disabledAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminAccountWithPassword: {
+            admin: components["schemas"]["AdminAccount"];
+            temporaryPassword: string;
+        };
         AdminHealth: {
             /** @enum {string} */
             status: "ok" | "degraded";
@@ -1335,6 +1507,9 @@ export interface components {
             id: string;
             email: string;
             name: string;
+            /** @enum {string} */
+            role: "owner" | "admin";
+            mustChangePassword: boolean;
             lastLoginAt: string | null;
         };
         AdminSession: {
@@ -1574,6 +1749,17 @@ export interface components {
             createdAt: string;
             deletedAt: string | null;
         };
+        CategoryImportReport: {
+            dryRun: boolean;
+            total: number;
+            imported: number;
+            duplicates: number;
+            invalid: {
+                row: number;
+                reason: string;
+            }[];
+            created: string[];
+        };
         Currency: {
             code: string;
             name: string;
@@ -1726,6 +1912,8 @@ export interface components {
             tradeCount: number;
             firstTradedOn: string | null;
             lastTradedOn: string | null;
+            lastBuyPriceMinor: number | null;
+            lastSellPriceMinor: number | null;
         };
         ImportReport: {
             dryRun: boolean;
@@ -1768,6 +1956,16 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        NoteImportReport: {
+            dryRun: boolean;
+            total: number;
+            imported: number;
+            duplicates: number;
+            invalid: {
+                row: number;
+                reason: string;
+            }[];
         };
         Portfolio: {
             baseCurrency: string;
@@ -2077,6 +2275,7 @@ export interface components {
             email: string;
             name: string;
             baseCurrency: string;
+            currencies: string[];
             timezone: string;
             locale: string;
             weekStart: number;
@@ -2428,6 +2627,7 @@ export interface operations {
                 "application/json": {
                     name?: string;
                     baseCurrency?: string;
+                    currencies?: string[];
                     timezone?: string;
                     locale?: string;
                     weekStart?: number;
@@ -3742,6 +3942,84 @@ export interface operations {
             };
         };
     };
+    importCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    rows: unknown[];
+                    /** @default false */
+                    dryRun?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CategoryImportReport"];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    importNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    rows: unknown[];
+                    /** @default false */
+                    dryRun?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["NoteImportReport"];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     importInvestments: {
         parameters: {
             query?: never;
@@ -4006,6 +4284,7 @@ export interface operations {
                     /** @enum {string} */
                     costMethod?: "wavg" | "fifo" | "manual";
                     archived?: boolean;
+                    currency?: string;
                 };
             };
         };
@@ -4234,6 +4513,8 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    /** @enum {string} */
+                    type?: "buy" | "sell" | "dividend" | "bonus" | "fee" | "contribution" | "withdrawal";
                     quantity?: number;
                     priceMinor?: number;
                     amountMinor?: number;
@@ -5459,6 +5740,312 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["AdminProfile"];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    adminChangePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    currentPassword: string;
+                    newPassword: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success (no content) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    adminListAdmins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAccount"][];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    adminCreateAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    email: string;
+                    name: string;
+                    /**
+                     * @default admin
+                     * @enum {string}
+                     */
+                    role?: "owner" | "admin";
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAccountWithPassword"];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    adminDisableAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAccount"];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    adminEnableAdmin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAccount"];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    adminResetAdmin2fa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAccount"];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    adminResetAdminPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAccountWithPassword"];
+                    };
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    adminSetAdminRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    role: "owner" | "admin";
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAccount"];
                     };
                 };
             };

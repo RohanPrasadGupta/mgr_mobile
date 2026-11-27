@@ -76,6 +76,30 @@ export function Chip({ label, selected, onPress, tone }: { label: string; select
   );
 }
 
+/** One choice from a few, shown as radio buttons (all options visible, the chosen one marked). */
+export function RadioGroup<V extends string>({ label, options, value, onChange }: { label: string; options: { value: V; label: string }[]; value: V; onChange: (v: V) => void }) {
+  const t = useTheme();
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ gap: 6 }}>
+      <Text style={{ color: t.muted, fontSize: 13, fontWeight: "600" }}>{label}</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {options.map((o) => {
+          const on = o.value === value;
+          return (
+            <Pressable key={o.value} accessibilityRole="radio" accessibilityLabel={o.label} accessibilityState={{ checked: on }} onPress={() => onChange(o.value)}
+              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: radius.md, borderWidth: 1, borderColor: on ? t.primary : t.border, opacity: pressed ? 0.75 : 1 })}>
+              <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: on ? t.primary : t.muted, alignItems: "center", justifyContent: "center" }}>
+                {on && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.primary }} />}
+              </View>
+              <Text style={{ color: t.fg, fontSize: 14, fontWeight: "500" }}>{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 export function ChipRow({ children, wrap }: { children: ReactNode; wrap?: boolean }) {
   return wrap ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{children}</View> : <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>{children}</ScrollView>;
 }

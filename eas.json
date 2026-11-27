@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "22.20.0",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.REPLACE-WITH-YOUR-HOST",
+        "EXPO_PUBLIC_WEB_URL": "https://app.REPLACE-WITH-YOUR-HOST"
+      }
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": { "track": "internal", "releaseStatus": "draft" }
+    }
+  }
+}

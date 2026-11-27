@@ -3,14 +3,16 @@ import { useEffect, useState } from "react";
 import { call, client, signOut } from "@/api/client";
 import { session } from "@/api/session";
 import { toast } from "@/lib/toast";
-import { useCurrencies, useMe, useMutate } from "@/api/hooks";
-import { Button, Card, Chip, ChipRow, ErrorText, Field, Screen, Segmented, Skeleton, T } from "@/components/ui";
+import { useMe, useMutate } from "@/api/hooks";
+import { Button, Card, ErrorText, Field, Screen, Segmented, Skeleton, T } from "@/components/ui";
 import { ChangePasswordCard } from "@/components/change-password";
+import { CurrencyPicker } from "@/components/currency-picker";
+import { MyCurrencies } from "@/components/my-currencies";
 import { themePref, useThemePref, type ThemePref } from "@/theme/theme";
+import { openPrivacy } from "@/lib/legal";
 
 export default function Settings() {
   const me = useMe();
-  const currencies = useCurrencies();
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [base, setBase] = useState("");
@@ -48,13 +50,14 @@ export default function Settings() {
         <T bold>Profile</T>
         <Field label="Email" value={me.data?.email ?? ""} editable={false} />
         <Field label="Name" value={name} onChangeText={setName} />
-        <T tone="muted" size={13} bold>Base currency</T>
-        <ChipRow>{currencies.data?.map((c) => <Chip key={c.code} label={c.code} selected={base === c.code} onPress={() => setBase(c.code)} />)}</ChipRow>
+        <CurrencyPicker label="Base currency" value={base} onChange={setBase} />
         {base !== me.data?.baseCurrency && <T tone="warn" size={13}>Changing the base currency does not convert your existing transactions, so past totals will mix currencies.</T>}
         <ErrorText error={error} />
         {msg ? <T tone="income" accessibilityRole="alert">{msg}</T> : null}
         <Button title="Save changes" onPress={submit} disabled={!dirty} loading={save.isPending} />
       </Card>
+
+      <MyCurrencies />
 
       <Card style={{ gap: 12 }}>
         <T bold>Appearance</T>
@@ -63,6 +66,7 @@ export default function Settings() {
 
       <ChangePasswordCard />
 
+      <Button title="Privacy policy" variant="ghost" onPress={() => void openPrivacy()} />
       <Button title="Sign out" variant="ghost" onPress={() => void signOut()} />
 
       <Card style={{ gap: 12, borderColor: "#dc262666" }}>
@@ -81,3 +85,4 @@ export default function Settings() {
     </Screen>
   );
 }
+

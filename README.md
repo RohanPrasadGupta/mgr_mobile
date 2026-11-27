@@ -20,6 +20,9 @@ The backend must be running (`pnpm dev` in `mgr_backend`, port 8000).
 
 Tokens are kept in the Keychain / Keystore via `expo-secure-store` (on web, which is a development convenience only, in `localStorage`).
 
+## Releasing to the stores
+App ID `com.rohangupta.moneymgr` (iPhone only on iOS). Step-by-step guide: [store/RELEASE.md](store/RELEASE.md); listing text, privacy answers and screenshot list: [store/listing.md](store/listing.md).
+
 ## Layout
 - `src/app` — Expo Router routes: `(auth)` login/register/forgot-password, `(app)/(tabs)` Home · Activity · Budgets · Invest · More, modals for transactions (tags + receipt photos), budgets, transfers, recurring rules, assets, trades, goals (+ add/take out money), debts (+ repayments) and notes, plus Goals, Debts, Notes, Reports, Accounts, Categories & tags, Transfers, Recurring, asset detail, SIP calculator and Settings (appearance, change password, delete account). `reset-password` and `verify-email` sit outside both groups so email links open signed in or out (`moneymgr://reset-password?token=…`; the reset screen also accepts the pasted link). A session guard in `_layout.tsx` (`Stack.Protected`) decides which group is reachable.
 - `src/api` — `client.ts` (typed openapi-fetch client, bearer auth, refresh-before-expiry, single-flight rotation-safe refresh, retry on 401), `session.ts` (secure token store), `hooks.ts` (queries), `schema.d.ts` (generated).
